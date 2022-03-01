@@ -1,2 +1,2 @@
 # ffp-pg_scripts
-Postgis scripts for postprocessing and webapp configuration
+FfP PostGIS scripts for postprocessing and webapp configuration
