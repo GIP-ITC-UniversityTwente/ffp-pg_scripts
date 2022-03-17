@@ -5,8 +5,7 @@
 --			Universidad Distrital Francisco José de Caldas
 --			Facultad de Ingeniería
 --  Lugar:	Bogotá D. C. - Colombia
---  Fecha:	17-03-2022	07-03-2022
---  Last edited today
+--  Fecha:	18-08-2020	16-03-2022
 --===========================================================================================================================
 -- Extensiones y esquemas utilizados en la base de datos para FFP
 -----------------------------------------------------------------------------------------------------------------------------
