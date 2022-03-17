@@ -14,12 +14,19 @@ create extension if not exists postgis;
 create extension if not exists postgis_topology;
 create extension if not exists "uuid-ossp";
 create extension if not exists tablefunc;
-create schema if not exists survey; 
+create schema if not exists survey;
 create schema if not exists load;
 create schema if not exists inspection;
 drop table if exists public.ffp_parameters;
 create table public.ffp_parameters (s_id int);
-insert into public.ffp_parameters values (3116);
+
+INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, proj4text, srtext)
+VALUES (9377, 'EPSG', 9377,
+  '+proj=tmerc +lat_0=4.596200416666666 +lon_0=-74.07750791666666 +k=1 +x_0=1000000 +y_0=1000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs ',
+  'PROJCS["MAGNA-SIRGAS / Origen-Nacional", GEOGCS["MAGNA-SIRGAS", DATUM["Marco_Geocentrico_Nacional_de_Referencia", SPHEROID["GRS 1980",6378137,298.257222101, AUTHORITY["EPSG","7019"]], TOWGS84[0,0,0,0,0,0,0], AUTHORITY["EPSG","6686"]], PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]], UNIT["degree",0.0174532925199433, AUTHORITY["EPSG","9122"]], AUTHORITY["EPSG","4686"]], PROJECTION["Transverse_Mercator"], PARAMETER["latitude_of_origin",4.0], PARAMETER["central_meridian",-73.0], PARAMETER["scale_factor",0.9992], PARAMETER["false_easting",5000000], PARAMETER["false_northing",2000000], UNIT["metre",1, AUTHORITY["EPSG","9001"]], AUTHORITY["EPSG","9377"]]')
+ON CONFLICT (srid) DO NOTHING;
+insert into public.ffp_parameters values (9377);
+
 -----------------------------------------------------------------------------------------------------------------------------
 set search_path to load,public;
 -----------------------------------------------------------------------------------------------------------------------------
@@ -52,7 +59,7 @@ $$language plpgsql;
 -----------------------------------------------------------------------------------------------------------------------------
 	-- Marca un punto como Ancla (A), ingresando el id del polígono y el número de punto dentro del polígono
 	--	(id_pol y num_pto de la tabla puntos_predio)
-	
+
 	CREATE OR REPLACE FUNCTION public.ffp_marca_ancla(integer, integer) returns text as $$
 		declare
 		begin
@@ -63,7 +70,7 @@ $$language plpgsql;
 	$$language plpgsql;
 	---------------------------------------------------------------------------------------------------------------------
 	-- Marca un punto como Ancla (A), ingresando el id del punto (campo pto de la tabla puntos_predio)
-	
+
 	CREATE OR REPLACE FUNCTION public.ffp_marca_ancla(integer) returns text as $$
 		declare
 		begin
@@ -98,7 +105,7 @@ $$language plpgsql;
 	$$language plpgsql;
 -----------------------------------------------------------------------------------------------------------------------------
 -- Función para cambiar de sistema de referencia (SRID)
-	
+
 CREATE OR REPLACE FUNCTION public.ffp_srid(varchar) returns text as $$
 	declare
 	begin
@@ -147,7 +154,7 @@ $$language plpgsql;
 	$$language plpgsql;
 	---------------------------------------------------------------------------------------------------------------------
 	-- Calcula el punto medio cuando se reciben tres puntos y un valor de confianza para los tres puntos
-	
+
 	CREATE OR REPLACE FUNCTION public.ffp_pto_medio (geometry, geometry, geometry, int) returns geometry as $$
 	declare
 		x1 real; y1 real; x2 real; y2 real; x3 real; y3 real;
@@ -230,7 +237,7 @@ $$language plpgsql;
 			x2:= (select st_x(st_transform($2,sr_id))); y2:= (select st_y(st_transform($2,sr_id)));
 			b_x:= (x1+x2)/2; b_y:= (y1+y2)/2;
 			dx1:= b_x-x1; dy1:= b_y-y1; dx2:= b_x-x2; dy2:= b_y-y2;
-			dp1:= |/((dx1^2)+(dy1^2)); dp2:= |/((dx2^2)+(dy2^2)); 
+			dp1:= |/((dx1^2)+(dy1^2)); dp2:= |/((dx2^2)+(dy2^2));
 			m1:= (select st_m(st_transform($1,sr_id))); m2:= (select st_m(st_transform($2,sr_id)));
 			if (m1>0)and(m2>0) then
 				if m1>dp1 then porc1:=1; else porc1:= m1/dp1; end if;
@@ -261,7 +268,7 @@ $$language plpgsql;
 	$$language plpgsql;
 	---------------------------------------------------------------------------------------------------------------------
 	-- Función que modifica y visualiza la posicion media calculada cuando recibe como entrada la geometría de tres puntos
-	
+
 	CREATE OR REPLACE FUNCTION public.ffp_ver_pto_medio (int, int, int, boolean) returns text as $$
 		declare
 		begin
@@ -272,7 +279,7 @@ $$language plpgsql;
 				(select geom from puntos_predio where pto = $2),
 				(select geom from puntos_predio where pto = $3)))));
 			if $4 then
-				update puntos_predio set geom = 
+				update puntos_predio set geom =
 					(select geom from pto_ajuste)
 					where pto in ($1,$2,$3);
 				perform ffp_actualice_geom_predio((select cast(id_pol as integer) from puntos_predio where pto=$1));
@@ -310,7 +317,7 @@ $$language plpgsql;
 				(select geom from puntos_predio where pto = $1),
 				(select geom from puntos_predio where pto = $2)))));
 			if $3 then
-				update puntos_predio set geom = 
+				update puntos_predio set geom =
 					(select geom from pto_ajuste)
 					where pto in ($1,$2);
 				perform ffp_actualice_geom_predio((select cast(id_pol as integer) from puntos_predio where pto=$1));
@@ -350,7 +357,7 @@ CREATE OR REPLACE FUNCTION public.ffp_mueva_1_a_2 (int, int, boolean) returns te
 		insert into pto_ajuste values (1,
 			(select geom from puntos_predio where pto = $2));
 		if $3 then
-			update puntos_predio set geom = 
+			update puntos_predio set geom =
 				(select geom from pto_ajuste)
 				where pto in ($1);
 			perform ffp_actualice_geom_predio((select cast(id_pol as integer) from puntos_predio where pto=$1));
@@ -361,13 +368,13 @@ CREATE OR REPLACE FUNCTION public.ffp_mueva_1_a_2 (int, int, boolean) returns te
 	end
 $$language plpgsql;
 -----------------------------------------------------------------------------------------------------------------------------
--- Función que actualiza la posición de un punto a la misma posición del punto de ajuste. Verdadero realiza la actualización 
+-- Función que actualiza la posición de un punto a la misma posición del punto de ajuste. Verdadero realiza la actualización
 
 CREATE OR REPLACE FUNCTION public.ffp_mueva_a_ajuste (int, boolean) returns text as $$
 	declare
 	begin
 		if $2 then
-			update puntos_predio set geom = 
+			update puntos_predio set geom =
 				(select geom from pto_ajuste)
 				where pto in ($1);
 			perform ffp_actualice_geom_predio((select cast(id_pol as integer) from puntos_predio where pto=$1));
@@ -398,7 +405,7 @@ $$language plpgsql;
 -----------------------------------------------------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.ffp_renumera_ptos () returns void as $$
 	declare
-		
+
 	begin
 		perform ffp_renumera_ptos_predio(objectid) from spatialunit;
 		drop table if exists tm_pt_pred;
@@ -471,7 +478,7 @@ declare
 	begin
 		drop table if exists ptos_limite;
 		create table ptos_limite as
-			select pto, id_pol, num_pto, label tipo, geom from puntos_predio where id_pol = $1 
+			select pto, id_pol, num_pto, label tipo, geom from puntos_predio where id_pol = $1
 				order by num_pto;
 		drop table if exists t_borre;
 		create table t_borre as
@@ -483,19 +490,19 @@ declare
 				n := n+1;
 				a2 := r.pto;
 				a1 := a2;
-				insert into limits (limitid,id_pol,seq_limit,ancla1) values 
+				insert into limits (limitid,id_pol,seq_limit,ancla1) values
 					(n,r.id_pol,i,r.pto);
 				if i>1 then
 					update limits set ancla2 = a2 where limitid = i-1;
 					delete from t_borre;
 					insert into t_borre
-						select geom from ptos_limite where id_pol = $1 and num_pto between 
-						(select num_pto from ptos_limite 
-							where pto = (select ancla1 from limits where limitid = i-1)) 
-						and 
-						(select num_pto from ptos_limite 
+						select geom from ptos_limite where id_pol = $1 and num_pto between
+						(select num_pto from ptos_limite
+							where pto = (select ancla1 from limits where limitid = i-1))
+						and
+						(select num_pto from ptos_limite
 							where pto = (select ancla2 from limits where limitid = i-1))
-						order by num_pto;	
+						order by num_pto;
 					update limits set geom = (select st_force3d(st_makeline(geom)) from t_borre)
 						where limitid = i-1;
 				end if;
@@ -505,8 +512,8 @@ declare
 		update limits set ancla2 = a2 where limitid = i;
 				delete from t_borre;
 					insert into t_borre
-						select geom from ptos_limite where num_pto >= 
-							(select num_pto from ptos_limite 
+						select geom from ptos_limite where num_pto >=
+							(select num_pto from ptos_limite
 								where pto = (select ancla1 from limits where limitid = i));
 					insert into t_borre
 						select geom from ptos_limite where num_pto = (select min(num_pto) from ptos_limite);
@@ -540,7 +547,7 @@ CREATE OR REPLACE FUNCTION public.ffp_reset_firmas() returns void as $$
 	declare
 
 	begin
-		update firma_l set concepto = null, fecha = null; 
+		update firma_l set concepto = null, fecha = null;
 		-- update firma_colinda_todos set concepto = null, fecha = null;
 		delete from boundary_signature;
 	end
@@ -580,13 +587,13 @@ CREATE OR REPLACE FUNCTION public.ffp_concepto_propietario_limite (int,int,varch
 	declare
 	begin
 		update firma_l set concepto = $4 where limitid=
-			(select limitid from firma_l f inner join c_t c on (f.limitid = c.limit1) 
+			(select limitid from firma_l f inner join c_t c on (f.limitid = c.limit1)
 					where pol1=$1 and GlobalID = $3 and pol2=$2)
-			and GlobalID = $3; 
+			and GlobalID = $3;
 		update firma_l set fecha = current_date where limitid=
-			(select limitid from firma_l f inner join c_t c on (f.limitid = c.limit1) 
+			(select limitid from firma_l f inner join c_t c on (f.limitid = c.limit1)
 					where pol1=$1 and GlobalID = $3 and pol2=$2)
-			and GlobalID = $3; 
+			and GlobalID = $3;
 	end
 $$language plpgsql;
 -----------------------------------------------------------------------------------------------------------------------------
@@ -597,8 +604,8 @@ CREATE OR REPLACE FUNCTION public.ffp_concepto_propietario_limite (int,varchar,b
 	declare
 
 	begin
-		update firma_l set concepto = $3,fecha = current_date 
-			where limitid=$1 and GlobalID = $2; 
+		update firma_l set concepto = $3,fecha = current_date
+			where limitid=$1 and GlobalID = $2;
 	end
 $$language plpgsql;
 -----------------------------------------------------------------------------------------------------------------------------
@@ -640,11 +647,11 @@ CREATE OR REPLACE FUNCTION public.ffp_actualizar_conceptos_propietarios () retur
 
 		drop table if exists firma_l_backup;
 		create table firma_l_backup as select * from firma_l;
-		
+
 		delete from firma_l;
 		insert into firma_l
 			select * from firma_l_nueva;
-		drop table firma_l_nueva;	
+		drop table firma_l_nueva;
 	end
 $$language plpgsql;
 -----------------------------------------------------------------------------------------------------------------------------
@@ -653,7 +660,7 @@ $$language plpgsql;
 CREATE OR REPLACE FUNCTION public.ffp_copia_limite (int,int) returns text as $$
 	declare
 	begin
-		return 'Aún no Se ha copiado el limite '||$1||' en el limite '||$2;	
+		return 'Aún no Se ha copiado el limite '||$1||' en el limite '||$2;
 	end
 $$language plpgsql;
 -----------------------------------------------------------------------------------------------------------------------------
@@ -715,10 +722,10 @@ $$language plpgsql;
 -----------------------------------------------------------------------------------------------------------------------------
 create or replace function public.ffp_renum_ancles(int) returns void as $$
 	begin
-		update puntos_predio 
+		update puntos_predio
 			set num_pto = num_pto-(select min(num_pto) from puntos_predio where label = 'A' and id_pol=$1)+1
 			where id_pol=$1;
-		update puntos_predio 
+		update puntos_predio
 			set num_pto=num_pto+(select count(*) from puntos_predio where id_pol=$1)
 			where id_pol = $1 and num_pto < 1;
 	end;
@@ -729,13 +736,12 @@ $$language plpgsql;
 --===========================================================================================================================
 -- Autor: Javier Morales - 17-03-2021
 --===========================================================================================================================
-CREATE OR REPLACE FUNCTION public.ffp_renum_ancles(
-	integer,
-	integer)
+-- Computes and adds a point to a spatialunit in the middle of two given vertices
+-- It requires the ordered ids (odered according to their position in the spatialunit) of the two chosen vertices
+
+CREATE OR REPLACE FUNCTION public.ffp_nuevo_punto_medio(integer, integer)
     RETURNS text
-    LANGUAGE 'plpgsql'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
+LANGUAGE 'plpgsql'
 AS $BODY$
 DECLARE
 	n integer := 0;
@@ -753,69 +759,152 @@ DECLARE
 			p1,n+1,'T',0,
 			(SELECT geom FROM pto_ajuste));
 		PERFORM ffp_actualice_geom_predio(p1);
-		DELETE FROM pto_ajuste;	
+		DELETE FROM pto_ajuste;
 		RETURN (SELECT CAST(MAX(pto) AS text) FROM puntos_predio);
 	END
 $BODY$;
------------------------------------------------------------------------------------------------------------------------------
--- Autor: Javier Morales - 17-03-2021
 
-	CREATE OR REPLACE FUNCTION public.ffp_proyectar_punto(
-		integer,
-		integer)
-		RETURNS text
-		LANGUAGE 'plpgsql'
-		COST 100
-		VOLATILE PARALLEL UNSAFE
-	AS $BODY$
-	DECLARE
-		BEGIN
-			DELETE FROM pto_ajuste;
-			INSERT INTO pto_ajuste
-			WITH point AS (
-				SELECT pto, geom
-				FROM puntos_predio
-				WHERE pto = $1
-			),
-			poly AS (
-				SELECT objectid, geom, st_exteriorring((st_dump(geom)).geom) AS ringgeom
-				FROM spatialunit
-				WHERE objectid = $2
-			)
-			SELECT 1, ST_Force4D(ST_PointN(ST_ShortestLine(poly.ringgeom, point.geom),1))
-			FROM point, poly;
-			RETURN 'Ya se proyectó el punto';
-		END
-	$BODY$;
------------------------------------------------------------------------------------------------------------------------------
--- Autor: Javier Morales - 17-03-2021
 
-	CREATE OR REPLACE FUNCTION public.ffp_nuevo_punto_proyectado(
-		integer,
-		integer)
-		RETURNS text
-		LANGUAGE 'plpgsql'
-		COST 100
-		VOLATILE PARALLEL UNSAFE
-	AS $BODY$
-	DECLARE
-		n integer := 0;
-		p1 integer := 0;
-		p2 integer := 0;
-		BEGIN
-			n := (SELECT num_pto FROM puntos_predio WHERE pto = $1);
-			p1 := (SELECT id_pol FROM puntos_predio WHERE pto = $1);
-			p2 := (SELECT id_pol FROM puntos_predio WHERE pto = $2);
-			UPDATE puntos_predio SET num_pto = num_pto+1
-				WHERE id_pol = p1 AND id_pol = p2 AND num_pto > n;
-			INSERT INTO puntos_predio VALUES
-				((SELECT MAX(pto) FROM puntos_predio)+1,
-				p1,n+1,'T',0,
-				(SELECT geom FROM pto_ajuste));
-			PERFORM ffp_actualice_geom_predio(p1);
-			DELETE FROM pto_ajuste;			 
-			RETURN (SELECT CAST(MAX(pto) AS text) FROM puntos_predio);
-		END
-	$BODY$;
+--===========================================================================================================================
+-- Autor: Javier Morales - 17-03-2021
+--===========================================================================================================================
+-- Computes and displays a point at the closest distance from a given vertex to a target spatialunit
+-- It requires the id of the source vertex and the id of the target polygon
+
+CREATE OR REPLACE FUNCTION public.ffp_proyectar_punto(integer, integer)
+	RETURNS text
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+	BEGIN
+		DELETE FROM pto_ajuste;
+		INSERT INTO pto_ajuste
+		WITH point AS (
+			SELECT pto, geom
+			FROM puntos_predio
+			WHERE pto = $1
+		),
+		poly AS (
+			SELECT objectid, geom, st_exteriorring((st_dump(geom)).geom) AS ringgeom
+			FROM spatialunit
+			WHERE objectid = $2
+		)
+		SELECT 1, ST_Force4D(ST_PointN(ST_ShortestLine(poly.ringgeom, point.geom),1))
+		FROM point, poly;
+		RETURN 'Ya se proyectó el punto';
+	END
+$BODY$;
+
+
+--===========================================================================================================================
+-- Autor: Javier Morales - 17-03-2021
+--===========================================================================================================================
+-- Adds a previosuly projected point to a spatialunit (it requires the function 'ffp_proyectar_punto' to be executed first)
+-- It requires the id of the source vertex and the id of the target polygon
+
+CREATE OR REPLACE FUNCTION public.ffp_nuevo_punto_proyectado(integer, integer)
+	RETURNS text
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+	n integer := 0;
+	p1 integer := 0;
+	p2 integer := 0;
+	BEGIN
+		n := (SELECT num_pto FROM puntos_predio WHERE pto = $1);
+		p1 := (SELECT id_pol FROM puntos_predio WHERE pto = $1);
+		p2 := (SELECT id_pol FROM puntos_predio WHERE pto = $2);
+		UPDATE puntos_predio SET num_pto = num_pto+1
+			WHERE id_pol = p1 AND id_pol = p2 AND num_pto > n;
+		INSERT INTO puntos_predio VALUES
+			((SELECT MAX(pto) FROM puntos_predio)+1,
+			p1,n+1,'T',0,
+			(SELECT geom FROM pto_ajuste));
+		PERFORM ffp_actualice_geom_predio(p1);
+		DELETE FROM pto_ajuste;
+		RETURN (SELECT CAST(MAX(pto) AS text) FROM puntos_predio);
+	END
+$BODY$;
+
+
+
+--===========================================================================================================================
+-- Autor: Javier Morales - 15-03-2022
+--===========================================================================================================================
+-- Identifies and lists all the recordds associated qith a given spatialunit
+-- (used as data source to delete spatilaunits during editing)
+
+CREATE OR REPLACE FUNCTION public.ffp_spatialunit_recordset(integer)
+    RETURNS TABLE (
+		tbl VARCHAR,
+		des VARCHAR,
+		gid VARCHAR
+	) AS $$
+LANGUAGE 'plpgsql'
+
+AS $BODY$
+DECLARE
+	su_id varchar;
+	su_name varchar;
+	r_id varchar;
+	r_type varchar;
+	p_id varchar;
+	item record;
+	att record;
+	p_att record;
+	BEGIN
+		SELECT s.globalid, btrim(spatialunit_name) INTO su_id, su_name FROM spatialunit AS s WHERE s.objectid = $1;
+		tbl := 'spatialunit';
+		des := su_name;
+		gid := su_id;
+		RETURN NEXT;
+		FOR item IN (SELECT * FROM spatialunit__attach AS r WHERE r.rel_globalid = su_id) LOOP
+			tbl := 'spatialunit__attach';
+			des := '';
+			gid := item.globalid;
+			RETURN NEXT;
+		END LOOP;
+		SELECT r.globalid, r.right_type INTO r_id, r_type FROM "right" AS r WHERE r.spatialunit_id = su_id;
+		IF r_id IS NOT null THEN
+			tbl := 'right';
+			des := COALESCE((SELECT en FROM inspection.codelist WHERE list = 'righttype' AND code::TEXT = r_type), '');
+			gid := r_id;
+			RETURN NEXT;
+			FOR item IN SELECT * FROM rightattachment as ra WHERE ra.right_id = r_id LOOP
+				IF item.globalid IS NOT NULL THEN
+					tbl := 'rightattachment';
+					des := COALESCE((SELECT en FROM inspection.codelist WHERE list = 'rightattachment' AND code::TEXT = item.attachment_type), '');
+					gid := item.globalid;
+					RETURN NEXT;
+					FOR att IN SELECT * FROM right__attach as a WHERE a.rel_globalid = item.globalid LOOP
+						tbl := 'right__attach';
+						des := '';
+						gid := att.globalid;
+						RETURN NEXT;
+					END LOOP;
+				END IF;
+			END LOOP;
+			FOR item IN SELECT * FROM party as p WHERE p.right_id = r_id LOOP
+				IF item.globalid IS NOT null THEN
+					tbl := 'party';
+					des := btrim(item.first_name) || ' ' || btrim(item.last_name);
+					gid := item.globalid;
+					RETURN NEXT;
+					FOR att IN SELECT * FROM partyattachment as pa WHERE pa.party_id = item.globalid LOOP
+						tbl := 'partyattachment';
+						des := COALESCE((SELECT en FROM inspection.codelist WHERE list = 'partyattachment' AND code::TEXT = att.attachment_type), '');
+						gid := att.globalid;
+						RETURN NEXT;
+						FOR p_att IN SELECT * FROM party__attach as a WHERE a.rel_globalid = att.globalid LOOP
+							tbl := 'party__attach';
+							des := '';
+							gid := p_att.globalid;
+							RETURN NEXT;
+						END LOOP;
+					END LOOP;
+				END IF;
+			END LOOP;
+		END IF;
+	END;
+$BODY$;
 -----------------------------------------------------------------------------------------------------------------------------
-	
