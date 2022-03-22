@@ -839,7 +839,7 @@ CREATE OR REPLACE FUNCTION public.ffp_spatialunit_recordset(integer)
 		tbl VARCHAR,
 		des VARCHAR,
 		gid VARCHAR
-	) AS $$
+	)
 LANGUAGE 'plpgsql'
 
 AS $BODY$
