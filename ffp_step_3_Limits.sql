@@ -14,7 +14,7 @@ set search_path to load,public;
 -----------------------------------------------------------------------------------------------------------------------------
 -- Adicionado 28/10/2021
 
-select renumera_ptos ();
+select ffp_renumera_ptos ();
 
 with a as
 (select id_pol,min(num_pto) min
@@ -70,8 +70,8 @@ do $inr_conf$
 		r record;
 	begin
 		for r in select * from conflictos loop
-			insert into spatialunit
-				select num,st_force3d(st_multi(c.geom)),'CONFLICTO',null,null,null,'{'||(select upper(cast((select uuid_generate_v4()) as varchar)))||'}' 
+			insert into spatialunit (objectid, geom, spatialunit_name, globalid, landuse, survey_unit)
+				select num,st_force3d(st_multi(c.geom)),'CONFLICTO','{'||(select upper(cast((select uuid_generate_v4()) as varchar)))||'}',0,''
 					from conflictos c where r.id_p1=c.id_p1 and r.id_p2=c.id_p2;
 		end loop;
 	end;
@@ -102,8 +102,8 @@ $gid$;
 update t_r set n=n+(select max(objectid) from "right");
 -- select * from t_r;
 
-insert into "right" (objectid,globalid,spatialunit_id,description) 
-	select n,globalid,spatialunit_id,description from t_r;
+insert into "right" (objectid,globalid,spatialunit_id,description,right_type) 
+	select n,globalid,spatialunit_id,description,99 from t_r;
 
 drop table if exists t_pt;
 create temporary table t_pt as
@@ -167,7 +167,7 @@ update puntos_predio set label=pp.label from puntos_predio pp
 	where puntos_predio.pto<>pp.pto and st_equals(puntos_predio.geom,pp.geom) 
 		and puntos_predio.id_pol in (select num from load.conflictos);
 
-select renumera_ptos ();
+select ffp_renumera_ptos ();
 
 with a as
 (select id_pol,min(num_pto) min
