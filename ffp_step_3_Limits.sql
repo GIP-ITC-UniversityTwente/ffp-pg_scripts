@@ -36,7 +36,7 @@ delete from conflictos where st_area(st_transform(geom,(select s_id from ffp_par
 
 drop table if exists spatialunit_conflicts;
 create table spatialunit_conflicts as
-	select objectid, st_force3d(geom) from spatialunit where objectid in 
+	select objectid, st_force3d(geom) as geom from spatialunit where objectid in 
 		(select distinct * from (select id_p1 from conflictos union select id_p2 from conflictos) a);
 select * from spatialunit_conflicts;
 
