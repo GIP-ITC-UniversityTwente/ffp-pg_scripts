@@ -24,7 +24,7 @@ create table public.ffp_parameters (s_id int);
 INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, proj4text, srtext)
 VALUES (9377, 'EPSG', 9377,
   '+proj=tmerc +lat_0=4.596200416666666 +lon_0=-74.07750791666666 +k=1 +x_0=1000000 +y_0=1000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs ',
-  'PROJCS["MAGNA-SIRGAS / Origen-Nacional", GEOGCS["MAGNA-SIRGAS", DATUM["Marco_Geocentrico_Nacional_de_Referencia", SPHEROID["GRS 1980",6378137,298.257222101, AUTHORITY["EPSG","7019"]], TOWGS84[0,0,0,0,0,0,0], AUTHORITY["EPSG","6686"]], PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]], UNIT["degree",0.0174532925199433, AUTHORITY["EPSG","9122"]], AUTHORITY["EPSG","4686"]], PROJECTION["Transverse_Mercator"], PARAMETER["latitude_of_origin",4.0], PARAMETER["central_meridian",-73.0], PARAMETER["scale_factor",0.9992], PARAMETER["false_easting",5000000], PARAMETER["false_northing",2000000], UNIT["metre",1, AUTHORITY["EPSG","9001"]], AUTHORITY["EPSG","9377"]]')
+  'PROJCS["MAGNA-SIRGAS / Colombia Origen-Nacional", GEOGCS["MAGNA-SIRGAS", DATUM["Marco_Geocentrico_Nacional_de_Referencia", SPHEROID["GRS 1980",6378137,298.257222101, AUTHORITY["EPSG","7019"]], TOWGS84[0,0,0,0,0,0,0], AUTHORITY["EPSG","6686"]], PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]], UNIT["degree",0.0174532925199433, AUTHORITY["EPSG","9122"]], AUTHORITY["EPSG","4686"]], PROJECTION["Transverse_Mercator"], PARAMETER["latitude_of_origin",4.0], PARAMETER["central_meridian",-73.0], PARAMETER["scale_factor",0.9992], PARAMETER["false_easting",5000000], PARAMETER["false_northing",2000000], UNIT["metre",1, AUTHORITY["EPSG","9001"]], AUTHORITY["EPSG","9377"]]')
 ON CONFLICT (srid) DO NOTHING;
 insert into public.ffp_parameters values (9377);
 
