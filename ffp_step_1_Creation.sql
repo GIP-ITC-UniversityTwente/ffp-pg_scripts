@@ -14,7 +14,6 @@ create extension if not exists postgis;
 create extension if not exists postgis_topology;
 create extension if not exists "uuid-ossp";
 create extension if not exists tablefunc;
-create extension if not exists unaccent;
 create schema if not exists survey;
 create schema if not exists load;
 create schema if not exists inspection;
@@ -24,7 +23,7 @@ create table public.ffp_parameters (s_id int);
 INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, proj4text, srtext)
 VALUES (9377, 'EPSG', 9377,
   '+proj=tmerc +lat_0=4.596200416666666 +lon_0=-74.07750791666666 +k=1 +x_0=1000000 +y_0=1000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs ',
-  'PROJCS["MAGNA-SIRGAS / Colombia Origen-Nacional", GEOGCS["MAGNA-SIRGAS", DATUM["Marco_Geocentrico_Nacional_de_Referencia", SPHEROID["GRS 1980",6378137,298.257222101, AUTHORITY["EPSG","7019"]], TOWGS84[0,0,0,0,0,0,0], AUTHORITY["EPSG","6686"]], PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]], UNIT["degree",0.0174532925199433, AUTHORITY["EPSG","9122"]], AUTHORITY["EPSG","4686"]], PROJECTION["Transverse_Mercator"], PARAMETER["latitude_of_origin",4.0], PARAMETER["central_meridian",-73.0], PARAMETER["scale_factor",0.9992], PARAMETER["false_easting",5000000], PARAMETER["false_northing",2000000], UNIT["metre",1, AUTHORITY["EPSG","9001"]], AUTHORITY["EPSG","9377"]]')
+  'PROJCS["MAGNA-SIRGAS / Origen-Nacional", GEOGCS["MAGNA-SIRGAS", DATUM["Marco_Geocentrico_Nacional_de_Referencia", SPHEROID["GRS 1980",6378137,298.257222101, AUTHORITY["EPSG","7019"]], TOWGS84[0,0,0,0,0,0,0], AUTHORITY["EPSG","6686"]], PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]], UNIT["degree",0.0174532925199433, AUTHORITY["EPSG","9122"]], AUTHORITY["EPSG","4686"]], PROJECTION["Transverse_Mercator"], PARAMETER["latitude_of_origin",4.0], PARAMETER["central_meridian",-73.0], PARAMETER["scale_factor",0.9992], PARAMETER["false_easting",5000000], PARAMETER["false_northing",2000000], UNIT["metre",1, AUTHORITY["EPSG","9001"]], AUTHORITY["EPSG","9377"]]')
 ON CONFLICT (srid) DO NOTHING;
 insert into public.ffp_parameters values (9377);
 
@@ -762,7 +761,7 @@ DECLARE
 		PERFORM ffp_actualice_geom_predio(p1);
 		DELETE FROM pto_ajuste;
 		RETURN (SELECT CAST(MAX(pto) AS text) FROM puntos_predio);
-	END
+	END;
 $BODY$;
 
 
@@ -793,7 +792,7 @@ DECLARE
 		SELECT 1, ST_Force4D(ST_PointN(ST_ShortestLine(poly.ringgeom, point.geom),1))
 		FROM point, poly;
 		RETURN 'Ya se proyectó el punto';
-	END
+	END;
 $BODY$;
 
 
@@ -801,7 +800,7 @@ $BODY$;
 -- Autor: Javier Morales - 17-03-2021
 --===========================================================================================================================
 -- Adds a previosuly projected point to a spatialunit (it requires the function 'ffp_proyectar_punto' to be executed first)
--- It requires the id of the source vertex and the id of the target polygon
+-- It requires the id of the two sequencial vertices where the proyected point will be added.
 
 CREATE OR REPLACE FUNCTION public.ffp_nuevo_punto_proyectado(integer, integer)
 	RETURNS text
@@ -824,9 +823,97 @@ DECLARE
 		PERFORM ffp_actualice_geom_predio(p1);
 		DELETE FROM pto_ajuste;
 		RETURN (SELECT CAST(MAX(pto) AS text) FROM puntos_predio);
-	END
+	END;
 $BODY$;
 
+
+--===========================================================================================================================
+-- Autor: Javier Morales - 25-03-2022
+--===========================================================================================================================
+-- Determines the ids ob the points forming an segment of a spatialunit,
+-- (it requires the function 'ffp_proyectar_punto' to be executed first)
+-- It requires the id of the target spatialunit
+
+CREATE OR REPLACE FUNCTION public.ffp_segment_points(integer)
+RETURNS TABLE (
+		pto1 integer,
+		pto2 integer
+	)
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+	p1 integer;
+	p2 integer;
+	n1 integer;
+	n2 integer;
+	BEGIN
+		WITH s AS(
+			SELECT (st_DumpSegments(geom)).geom
+			FROM spatialunit WHERE objectid = $1
+		),
+		t AS (
+			SELECT ST_PointN(s.geom,1) AS p1, ST_PointN(s.geom,2) AS p2, ST_Distance(s.geom, (SELECT geom FROM pto_ajuste))
+			FROM s
+			ORDER BY 3
+			limit 1
+		),
+		r as (
+			SELECT l.* FROM (
+				SELECT pto, num_pto
+				FROM puntos_predio AS pp, t
+				WHERE ST_Equals(t.p1, pp.geom) and id_pol = $1
+				UNION
+				SELECT pto, num_pto
+				FROM puntos_predio AS pp, t
+				WHERE ST_Equals(t.p2, pp.geom) and id_pol = $1
+			) AS l ORDER BY 2
+		)
+		SELECT ptos[1], ptos[2], nums[1], nums[2] INTO p1, p2, n1, n2
+		FROM (SELECT array_agg(pto) as ptos, array_agg(num_pto) as nums FROM r) AS q;
+		IF n2 - n1 = 1 THEN
+			pto1 := p1;
+			pto2 := p2;
+		ELSE
+			pto1 := p2;
+			pto2 := p1;
+		END IF;
+		RETURN NEXT;
+	END;
+$BODY$;
+
+
+--===========================================================================================================================
+-- Autor: Javier Morales - 25-03-2022
+--===========================================================================================================================
+-- Adds a previosuly projected point to a spatialunit (it requires the function 'ffp_proyectar_punto' to be executed first)
+-- It requires the id of the spatialunit where the point will be added.
+
+CREATE OR REPLACE FUNCTION public.ffp_nuevo_punto_proyectado(integer)
+	RETURNS text
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+	n integer := 0;
+	p1 integer := 0;
+	p2 integer := 0;
+	pol1 integer := 0;
+	pol2 integer := 0;
+	BEGIN
+		SELECT * INTO p1, p2 from ffp_segment_points($1);
+		n := (SELECT num_pto FROM puntos_predio WHERE pto = p1);
+		pol1 := (SELECT id_pol FROM puntos_predio WHERE pto = p1);
+		pol2 := (SELECT id_pol FROM puntos_predio WHERE pto = p2);
+		UPDATE puntos_predio SET num_pto = num_pto+1
+			WHERE id_pol = pol1 AND id_pol = pol2 AND num_pto > n;
+		INSERT INTO puntos_predio VALUES
+			((SELECT MAX(pto) FROM puntos_predio)+1,
+			pol1, n+1, 'T', 0,
+			(SELECT geom FROM pto_ajuste));
+		PERFORM ffp_actualice_geom_predio(pol1);
+		DELETE FROM pto_ajuste;
+		RETURN (SELECT CAST(MAX(pto) AS text) FROM puntos_predio);
+	END;
+$BODY$;
 
 
 --===========================================================================================================================
