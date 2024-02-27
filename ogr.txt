@@ -1,0 +1,1 @@
+ogr2ogr.exe -append -f "PostgreSQL" PG:"host=localhost port=5432 dbname=<DBNAME> user=<USER> password=<PASSWORD> ACTIVE_SCHEMA=load" -lco GEOMETRY_NAME=geom -lco DIM=3 -lco FID=objectid -skipfailures "ffpdata.gdb" -progress
