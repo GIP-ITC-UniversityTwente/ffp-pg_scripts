@@ -7,7 +7,7 @@ These _FfP_ configuration scripts are used for processing data collected during 
 ## Requirements
 
 * PostgreSQL/PostGIS
-* MS4W 4.0.5 &rarr; Mapserver/Apache
+* MS4W 4.0.5 &rarr; MapServer/Apache
 
 &nbsp;
 
