@@ -1,0 +1,15 @@
+host|Hostname
+port|Port
+db|Database
+user|User
+pwd|Password
+fgdb|File GDB
+q1|Do you want to procceed with the given values
+q2|Would you like to create Kadaster roles
+q3|Public Inspection app folder
+msg1|This script will initialize a ffp database for editing.
+msg2|This script will configure an edited ffp database for the public inspection application.
+msg3|Database initalization completed succesfully...
+msg4|Database update completed succesfully...
+msg5|This script configures Apache to run the Public Inspection app (You must restart the Apache service afterwards).
+msg6|Apache configured succesfully...

@@ -2,6 +2,10 @@
 -- Code to generate required DB components for the public inspection app 3.2.5
 -- ---
 
+--
+--  Script Name:	app_init
+--
+
 BEGIN;
 
 	CREATE EXTENSION IF NOT EXISTS postgis;

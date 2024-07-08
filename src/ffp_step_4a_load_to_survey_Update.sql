@@ -7,6 +7,9 @@
 --			aeortizd@udistrital.edu.co
 --  Lugar:	Bogotá D. C. - Colombia
 --  Fecha:	23-08-2020
+--
+--  Script Name:	ffp_step_4a_load_to_survey_Update
+--
 --===========================================================================================================================
 -- Extensiones y esquemas utilizados en la base de datos para FFP
 -----------------------------------------------------------------------------------------------------------------------------

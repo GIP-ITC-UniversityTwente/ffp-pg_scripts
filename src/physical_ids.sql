@@ -1,6 +1,9 @@
+--
+--  Script Name:	physical_ids
+--
 BEGIN;
 
-    SET search_path = inspection;
+  SET search_path = inspection;
 
 	ALTER TABLE spatialunit
     ADD COLUMN phy_ids character varying;

@@ -7,6 +7,9 @@
 --			aeortizd@udistrital.edu.co
 --  Lugar:	Bogotá D. C. - Colombia
 --  Fecha:	25-08-2020
+--
+--  Script Name:	ffp_step_5_survey_to_Inspection
+--
 --===========================================================================================================================
 -- Cargue de información en el esquema Inspection a partir de la información del esquema Load en la base de datos para FFP
 -----------------------------------------------------------------------------------------------------------------------------
