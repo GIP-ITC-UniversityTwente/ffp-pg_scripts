@@ -13,9 +13,9 @@ These _FfP_ configuration scripts are used for processing data collected during 
 
 ## Usage
 
-> Uses a FileGeodatabase [version 9.4] to create and populate a _FfP_ database and also create all the necesary functions to edit the data.
-
 &nbsp;
+
+> Uses a FileGeodatabase [version 9.4] to create and populate a _FfP_ database and also create all the necesary functions to edit the data.
 
 ```
 ./1_initialize_editing
