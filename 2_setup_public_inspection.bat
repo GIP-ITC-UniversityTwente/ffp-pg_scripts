@@ -113,7 +113,10 @@ goto :init
   set default.user=postgres
   set "pwd="
 
-  set PATH=%SystemRoot%\system32;C:\ms4w\Apache\cgi-bin;C:\ms4w\tools\gdal-ogr;C:\Program Files\PostgreSQL\14\bin;%PATH%
+  for /f "delims=" %%a in ('dir /b "C:\Program Files\PostgreSQL\1*"') do (
+    set pg=%%a
+  )
+  set PATH=%SystemRoot%\system32;C:\ms4w\Apache\cgi-bin;C:\ms4w\tools\gdal-ogr;C:\Program Files\PostgreSQL\%pg%\bin;%PATH%
   set GDAL_DATA=C:\ms4w\gdaldata
 
   call :locale
