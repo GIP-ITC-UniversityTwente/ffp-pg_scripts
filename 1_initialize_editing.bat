@@ -10,7 +10,7 @@ if /i "%param%"=="--reset" call :resetvars
 :: Define the ESC sequence for coloring text
 for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
 
-set script_path=./scripts
+set script_path=./src
 
 goto :init
 

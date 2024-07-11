@@ -11,7 +11,7 @@ if /i "%param%"=="--reset" call :resetvars
 :: Define the ESC sequence for coloring text
 for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
 
-set script_path=./scr
+set script_path=./src
 
 goto :init
 
@@ -216,7 +216,7 @@ goto :init
   if %roles_ok%==false goto :error
 
 
-  psql -d "%conn_string%" -v ON_ERROR_STOP=1 --single-transaction --file=../pg-scripts/merged.sql
+  psql -d "%conn_string%" -v ON_ERROR_STOP=1 --single-transaction --file=%script_path%/merged.sql
   if %errorlevel% NEQ 0 goto :error
 
 

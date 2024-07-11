@@ -8,6 +8,8 @@
 
 BEGIN;
 
+	SET search_path = public;
+
 	CREATE EXTENSION IF NOT EXISTS postgis;
 	CREATE EXTENSION IF NOT EXISTS tablefunc;
 	CREATE EXTENSION IF NOT EXISTS unaccent;
