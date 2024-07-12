@@ -30,8 +30,8 @@ These _FfP_ configuration scripts are used for processing data collected during 
 ```
 &nbsp;
 
-> Creates, if required, the necessary configuration files in Apache to run the Public Inspection Application.
+> Creates, if required, the necessary configuration elelments in Apache/MapServer to run the Public Inspection Application.
 
 ```
-./web_folders
+./apache_mapserver_configuration
 ```

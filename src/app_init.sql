@@ -48,7 +48,7 @@ BEGIN;
             f.titulo,
             f.remarks
         FROM firma_l AS f
-            LEFT JOIN party AS p ON f.globalid::text = p.right_id::text;
+            LEFT JOIN party AS p ON f.globalid::text = p.right_id::text AND p.objectid = f.id_party;
 
     --
 

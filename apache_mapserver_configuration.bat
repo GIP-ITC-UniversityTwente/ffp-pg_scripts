@@ -38,7 +38,11 @@ goto :init
   call :locale
 
   echo.
+  echo.
+  echo ------------------------------------------------------
+  echo.
   echo %lbl_msg5%
+  echo.
 
   call :message in %default_path% flag0
   set /p ffp_path="%lbl_q3% <%flag0%>?: "
@@ -50,15 +54,14 @@ goto :init
   echo.
 
 
-
-  @REM if %ffp_path:~1,2% NEQ :\ (
-  @REM   echo Incorrect Path (%flag0%)
-  @REM   goto :error
-  @REM )
-
   call :message err %ffp_path% flag0
   if %ffp_path:~1,2% NEQ :\ (
     echo Invalid path ^(%flag0%^)
+    goto :error
+  )
+
+  if not exist %ffp_path%\index.html (
+    echo Inspection app files not found in %flag0%
     goto :error
   )
 
@@ -67,16 +70,14 @@ goto :init
   set ms4w=C:\ms4w\httpd.d\
 
 
-  set "pppp=abc"
   FOR %%a in (%httpd_folders%) do (
     SETLOCAL ENABLEDELAYEDEXPANSION
 
-    echo --11 !ffp_path:%pi_folder%=%%a!
-
-    echo Alias /%%a/ "!ffp_path:%pi_folder%=%%a!" > %ms4w%httpd_%%a.conf
-    if %errorlevel% NEQ 0 goto :error
-    echo.>>%ms4w%httpd_%%a.conf
-    echo ^<Directory "!ffp_path:%pi_folder%=%%a!"^>^
+    if not exist %ms4w%httpd_%%a.conf (
+      echo Alias /%%a/ "!ffp_path:%pi_folder%=%%a!" > %ms4w%httpd_%%a.conf
+      if %errorlevel% NEQ 0 goto :error
+      echo.>>%ms4w%httpd_%%a.conf
+      echo ^<Directory "!ffp_path:%pi_folder%=%%a!"^>^
 
   AllowOverride All^
 
@@ -91,7 +92,18 @@ goto :init
   Require all granted^
 
 ^</Directory^> >> %ms4w%httpd_%%a.conf
+    )
   )
+
+  set "errorlevel="
+  findstr /I "<9377>" c:\ms4w\proj\nad\epsg
+  if %errorlevel% EQU 1 (
+    echo # MAGNA-SIRGAS / Origen-Nacional >> c:\ms4w\proj\nad\epsg
+    echo ^<9377^> +proj=tmerc +lat_0=4 +lon_0=-73 +k=0.9992 +x_0=5000000 +y_0=2000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=cr ^<^> >> c:\ms4w\proj\nad\epsg
+    set origin_msg=y
+  )
+
+  C:\ms4w\Python\Scripts\pip.exe install -r requirements.txt
 
   :: Report success
   echo.
@@ -101,6 +113,17 @@ goto :init
   call :message res "%httpd_folders%" flag0
   set flag0=%flag0: =, %
   echo Web folders %flag0% created succesfully...
+
+  call :message res MAGNA-SIRGAS flag0
+  if defined origin_msg (
+    echo %flag0% parameters added to MapServer
+  ) else (
+    echo %flag0% parameters already exists
+  )
+
+  call :message res Python flag0
+  set flag0=%flag0: =, %
+  echo %flag0% requirements checked...
 
   echo.
   echo ------------------------------------------------------
@@ -119,7 +142,7 @@ goto :init
   set "errmsg=Execution Unsuccessful"
   call :message err "%errmsg%" flag0
   echo %flag0%
-  if "%db_exist%"=="1" dropdb --maintenance-db="%conn%" %db%
+
   echo.
   echo Stoping...
   echo.
